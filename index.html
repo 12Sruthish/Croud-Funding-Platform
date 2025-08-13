@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crowdfunding Platform</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #f8f9fa;
+    }
+    header {
+        background: #007bff;
+        color: #fff;
+        padding: 15px;
+        text-align: center;
+        font-size: 24px;
+    }
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+        color: #007bff;
+    }
+    input, textarea, button {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    button {
+        background: #007bff;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #0056b3;
+    }
+    .project {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin-top: 10px;
+        border-radius: 6px;
+        background: #fafafa;
+    }
+    .progress-bar {
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 8px 0;
+    }
+    .progress {
+        background: #28a745;
+        height: 10px;
+        width: 0;
+    }
+    .update-section {
+        margin-top: 10px;
+    }
+    .update-section textarea {
+        margin-bottom: 5px;
+    }
+</style>
+</head>
+<body>
+
+<header>Crowdfunding Platform</header>
+
+<div class="container">
+    <h2>Create a New Project</h2>
+    <input type="text" id="projectTitle" placeholder="Project Title">
+    <textarea id="projectDesc" placeholder="Project Description"></textarea>
+    <input type="number" id="projectGoal" placeholder="Funding Goal (₹)">
+    <button onclick="createProject()">Create Project</button>
+</div>
+
+<div class="container">
+    <h2>Available Projects</h2>
+    <div id="projectList"></div>
+</div>
+
+<script>
+    let projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+    function createProject() {
+        const title = document.getElementById('projectTitle').value;
+        const desc = document.getElementById('projectDesc').value;
+        const goal = document.getElementById('projectGoal').value;
+
+        if (!title || !desc || !goal) {
+            alert("Please fill all fields!");
+            return;
+        }
+
+        const newProject = {
+            id: Date.now(),
+            title,
+            desc,
+            goal: parseInt(goal),
+            raised: 0,
+            updates: []
+        };
+
+        projects.push(newProject);
+        localStorage.setItem('projects', JSON.stringify(projects));
+        displayProjects();
+        document.getElementById('projectTitle').value = '';
+        document.getElementById('projectDesc').value = '';
+        document.getElementById('projectGoal').value = '';
+    }
+
+    function displayProjects() {
+        const projectList = document.getElementById('projectList');
+        projectList.innerHTML = '';
+        projects.forEach(project => {
+            const progressPercent = (project.raised / project.goal) * 100;
+            const projectDiv = document.createElement('div');
+            projectDiv.className = 'project';
+            projectDiv.innerHTML = `
+                <h3>${project.title}</h3>
+                <p>${project.desc}</p>
+                <p><b>Goal:</b> ₹${project.goal} | <b>Raised:</b> ₹${project.raised}</p>
+                <div class="progress-bar"><div class="progress" style="width:${progressPercent}%;"></div></div>
+                <input type="number" id="contribution-${project.id}" placeholder="Enter amount (₹)">
+                <button onclick="contribute(${project.id})">Contribute</button>
+                
+                <div class="update-section">
+                    <h4>Project Updates</h4>
+                    <textarea id="update-${project.id}" placeholder="Write an update"></textarea>
+                    <button onclick="addUpdate(${project.id})">Post Update</button>
+                    <ul>${project.updates.map(u => `<li>${u}</li>`).join('')}</ul>
+                </div>
+            `;
+            projectList.appendChild(projectDiv);
+        });
+    }
+
+    function contribute(projectId) {
+        const amountInput = document.getElementById(`contribution-${projectId}`);
+        const amount = parseInt(amountInput.value);
+        if (!amount || amount <= 0) {
+            alert("Enter a valid amount!");
+            return;
+        }
+        projects = projects.map(p => {
+            if (p.id === projectId) {
+                p.raised += amount;
+            }
+            return p;
+        });
+        localStorage.setItem('projects', JSON.stringify(projects));
+        displayProjects();
+    }
+
+    function addUpdate(projectId) {
+        const updateInput = document.getElementById(`update-${projectId}`);
+        const updateText = updateInput.value.trim();
+        if (!updateText) {
+            alert("Update cannot be empty!");
+            return;
+        }
+        projects = projects.map(p => {
+            if (p.id === projectId) {
+                p.updates.push(updateText);
+            }
+            return p;
+        });
+        localStorage.setItem('projects', JSON.stringify(projects));
+        displayProjects();
+    }
+
+    displayProjects();
+</script>
+
+</body>
+</html>
